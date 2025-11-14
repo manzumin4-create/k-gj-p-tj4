@@ -1,1 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文才向上アシスタント</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; }
+        .glow-button {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px 0 rgba(100, 100, 255, 0.5);
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+        }
+        .glow-button:hover {
+            box-shadow: 0 6px 25px 0 rgba(100, 100, 255, 0.8);
+            transform: translateY(-2px);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .text-area {
+            transition: all 0.3s ease;
+        }
+        .text-area:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
 
+    <div class="container mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2 text-gray-800">小説文才向上アシスタント</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">あなたの書いた二次創作の文章を入力してください。AIが「文才がある」と感じられるような、豊かで魅力的な描写や表現を提案・修正します。</p>
+        </div>
+
+        <!-- 入力エリア -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-6 transition-all duration-300 hover:shadow-xl">
+            <label for="draftText" class="block text-lg font-semibold mb-2 text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM7 8a1 1 0 012 0v1a1 1 0 11-2 0V8zm2 4a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+                あなたの文章（添削してほしい原稿）
+            </label>
+            <textarea id="draftText" rows="8" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 text-area" placeholder="例：彼女は部屋に入った。彼はそこに立っていた。私たちは何も言わなかった。"></textarea>
+            <div class="flex justify-between items-center mt-2">
+                <p class="text-sm text-gray-500">例文をそのまま使用することも、消して独自の文章を入力することもできます。</p>
+                <button id="clearButton" class="text-sm text-indigo-600 hover:text-indigo-800 transition-colors duration-200">クリア</button>
+            </div>
+        </div>
+
+        <!-- ボタン -->
+        <button id="polishButton" class="w-full px-6 py-4 text-white font-bold rounded-xl text-lg glow-button hover:bg-indigo-700 transition duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg id="buttonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+            <span id="buttonText">文章を添削・描写追加</span>
+            <svg id="loadingSpinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </button>
+
+        <!-- 結果表示エリア -->
+        <div id="resultContainer" class="mt-8 bg-white p-6 rounded-xl shadow-lg border-t-4 border-indigo-500 hidden fade-in">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                AIによる提案・添削後の文章
+            </h2>
+            <div id="resultOutput" class="min-h-[150px] p-4 bg-gray-50 border border-gray-200 rounded-lg whitespace-pre-wrap text-gray-800 leading-relaxed">
+                ここにAIが添削した文章が表示されます。
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button id="copyButton" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-200 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                    </svg>
+                    コピー
+                </button>
+            </div>
+        </div>
+
+        <!-- ヒントセクション -->
+        <div class="mt-8 bg-indigo-50 p-6 rounded-xl border border-indigo-100">
+            <h3 class="text-lg font-semibold mb-3 text-indigo-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+                より良い結果を得るためのヒント
+            </h3>
+            <ul class="list-disc pl-5 text-indigo-700 space-y-1">
+                <li>具体的な情景や感情を描写した文章を入力すると、より効果的な添削ができます</li>
+                <li>長すぎる文章は分割して入力することをおすすめします</li>
+                <li>特定の文体（例：詩的、ドラマチック、叙情的）にしたい場合は、その旨を文章に含めてください</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        const DRAFT_EXAMPLE = "彼女は部屋に入った。彼はそこに立っていた。私たちは何も言わなかった。重い沈黙だけが、二人を分かつ壁だった。";
+        const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+        const API_KEY = ""; // Canvas環境で自動で提供されるため、空のままにします
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+
+        // DOM要素
+        const draftTextarea = document.getElementById('draftText');
+        const polishButton = document.getElementById('polishButton');
+        const resultOutput = document.getElementById('resultOutput');
+        const resultContainer = document.getElementById('resultContainer');
+        const buttonText = document.getElementById('buttonText');
+        const buttonIcon = document.getElementById('buttonIcon');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const clearButton = document.getElementById('clearButton');
+        const copyButton = document.getElementById('copyButton');
+
+        // 初期設定
+        draftTextarea.value = DRAFT_EXAMPLE;
+        polishButton.disabled = false;
+
+        /**
+         * 処理中のUIを更新
+         * @param {boolean} isLoading - ロード中かどうか
+         */
+        function setLoading(isLoading) {
+            polishButton.disabled = isLoading;
+            if (isLoading) {
+                loadingSpinner.classList.remove('hidden');
+                buttonIcon.classList.add('hidden');
+                buttonText.textContent = '添削中...';
+            } else {
+                loadingSpinner.classList.add('hidden');
+                buttonIcon.classList.remove('hidden');
+                buttonText.textContent = '文章を添削・描写追加';
+            }
+        }
+
+        /**
+         * Gemini APIへのリクエストをexponential backoff付きで実行
+         * @param {Object} payload - APIリクエストのペイロード
+         * @param {number} maxRetries - 最大リトライ回数
+         * @returns {Promise<Object>} APIレスポンスのJSON
+         */
+        async function fetchWithBackoff(payload, maxRetries = 5) {
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        return await response.json();
+                    } else if (response.status === 429 && attempt < maxRetries - 1) {
+                        // Rate limit exceeded (429), wait and retry
+                        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    } else {
+                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    }
+                } catch (error) {
+                    if (attempt < maxRetries - 1) {
+                        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+            throw new Error('API call failed after multiple retries.');
+        }
+
+        /**
+         * ユーザーの文章の添削をリクエスト
+         */
+        async function requestPolish() {
+            const userText = draftTextarea.value.trim();
+            if (!userText) {
+                resultContainer.classList.remove('hidden');
+                resultOutput.textContent = '添削する文章を入力してください。';
+                return;
+            }
+
+            setLoading(true);
+            resultContainer.classList.remove('hidden');
+            resultOutput.textContent = 'AIが最高の表現を探しています... しばらくお待ちください。';
+
+            // プロの小説家/編集者として振る舞うシステム命令
+            const systemPrompt = `あなたはプロの小説家・編集者であり、特に二次創作の文体向上に特化しています。
+以下のユーザーの文章を読み、それを「文才がある」「叙情的で引き込まれる」と感じられるように、以下を重点的にブラッシュアップしてください。
+
+1. **描写の強化**: 五感に訴えかける具体的な表現（色、音、匂い、触感、感情の機微）を追加し、情景やキャラクターの心情を鮮やかに描き出してください。
+2. **表現の洗練**: 平凡な表現を、比喩、擬人化、倒置法などの修辞技法を用いて文学的に洗練させ、文章にリズムと深みを与えてください。
+3. **文体の調整**: 全体のトーン（雰囲気）を維持しつつ、より感情の機微が伝わるような語彙を選択してください。
+
+出力は、**修正後の文章本体のみ**を提示し、説明やコメントは一切付け加えないでください。`;
+
+            const userQuery = `以下の文章を、文才があると感じられるように、描写を加えてより洗練された表現に修正してください。
+
+---
+${userText}
+---`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                // Google Searchは不要
+            };
+
+            try {
+                const result = await fetchWithBackoff(payload);
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const polishedText = candidate.content.parts[0].text;
+                    resultOutput.textContent = polishedText;
+                } else {
+                    resultOutput.textContent = 'AIからの応答が取得できませんでした。時間をおいて再度お試しください。';
+                }
+            } catch (error) {
+                console.error("API Request Failed:", error);
+                resultOutput.textContent = `エラーが発生しました: ${error.message}。ネットワーク接続またはAPIの制限を確認してください。`;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        /**
+         * テキストをクリップボードにコピー
+         */
+        function copyToClipboard() {
+            const text = resultOutput.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // 一時的にボタンのテキストを変更
+                const originalText = copyButton.textContent;
+                copyButton.textContent = 'コピーしました！';
+                copyButton.classList.remove('bg-gray-200', 'text-gray-700');
+                copyButton.classList.add('bg-green-500', 'text-white');
+                
+                setTimeout(() => {
+                    copyButton.textContent = originalText;
+                    copyButton.classList.remove('bg-green-500', 'text-white');
+                    copyButton.classList.add('bg-gray-200', 'text-gray-700');
+                }, 2000);
+            }).catch(err => {
+                console.error('コピーに失敗しました:', err);
+            });
+        }
+
+        /**
+         * テキストエリアをクリア
+         */
+        function clearTextarea() {
+            draftTextarea.value = '';
+            draftTextarea.focus();
+        }
+
+        // イベントリスナーの設定
+        document.addEventListener('DOMContentLoaded', () => {
+            polishButton.addEventListener('click', requestPolish);
+            clearButton.addEventListener('click', clearTextarea);
+            copyButton.addEventListener('click', copyToClipboard);
+            
+            // テキストエリアの内容が変更されたときに結果を非表示にする
+            draftTextarea.addEventListener('input', () => {
+                resultContainer.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
